@@ -1,0 +1,77 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
+
+// Configuration DHT11
+#define DHTPIN 2        // Pin de données DHT11
+#define DHTTYPE DHT11   // Type du capteur
+
+DHT dht(DHTPIN, DHTTYPE);
+
+// Configuration OLED
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_ADDRESS 0x3C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+
+  // Initialisation de l'écran OLED
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
+    Serial.println(F("Échec de l'initialisation de l'écran OLED"));
+    while (true); // Stop si l'écran ne répond pas
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("Initialisation...");
+  display.display();
+  delay(1000);
+}
+
+void loop() {
+  // Lire température et humidité
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  // Vérifier si les lectures sont valides
+  if (isnan(h) || isnan(t)) {
+    Serial.println(F("Erreur de lecture du capteur DHT11"));
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("Erreur capteur");
+    display.display();
+    delay(2000);
+    return;
+  }
+
+  // Affichage sur le moniteur série
+  Serial.print("Humidité: ");
+  Serial.print(h);
+  Serial.print(" %  Température: ");
+  Serial.print(t);
+  Serial.println(" *C");
+
+  // Affichage sur OLED
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.print("T: ");
+  display.print(t);
+  display.println(" C");
+
+  display.setCursor(0, 30);
+  display.print("H: ");
+  display.print(h);
+  display.println(" %");
+
+  display.display();
+
+  delay(2000);  // Délai entre les mesures
+}
